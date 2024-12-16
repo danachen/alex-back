@@ -1,0 +1,61 @@
+{
+  "name": "Alexandria",
+  "version": "0.1.0",
+  "description": "Learn languages by reading.",
+  "main": "build/index.js",
+  "engines": {
+    "node": "16.13.x"
+  },
+  "scripts": {
+    "build": "tsc",
+    "deploy": "sam build && sam deploy",
+    "test": "cross-env NODE_ENV=test jest --verbose --runInBand --collectCoverage",
+    "start-docker-postgres": "docker-compose -f postgres.yaml up -d",
+    "stop-docker-postgres": "docker-compose -f postgres.yaml down --volumes",
+    "pgtest": "npm run start-docker-postgres && npm test && npm run stop-docker-postgres",
+    "lint": "eslint --ext .ts .",
+    "tsc": "tsc"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alexandria-reader/backend.git"
+  },
+  "author": "Dana, Eamon, Marc",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/alexandria-reader/backend/issues"
+  },
+  "homepage": "https://github.com/alexandria-reader/backend#readme",
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.0.0",
+    "@aws-sdk/lib-dynamodb": "^3.0.0",
+    "@hapi/boom": "^9.1.4",
+    "@sendgrid/mail": "^7.6.0",
+    "article-parser": "^5.0.2",
+    "aws-lambda": "^1.0.7",
+    "bcrypt": "^5.0.1",
+    "dotenv": "^10.0.0",
+    "jsonwebtoken": "^8.5.1",
+    "pg": "^8.7.1",
+    "pg-format": "^1.0.4",
+    "tslib": "^2.3.1",
+    "typescript": "^4.5.2",
+    "uuid": "^8.3.2"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.92",
+    "@types/bcrypt": "^5.0.0",
+    "@types/jest": "^27.0.3",
+    "@types/jsonwebtoken": "^8.5.6",
+    "@types/node": "^16.11.11",
+    "@types/pg": "^8.6.1",
+    "@types/uuid": "^8.3.3",
+    "@typescript-eslint/eslint-plugin": "^5.5.0",
+    "@typescript-eslint/parser": "^5.5.0",
+    "cross-env": "^7.0.3",
+    "eslint": "^8.4.0",
+    "jest": "^27.4.3",
+    "ts-jest": "^27.1.0",
+    "ts-node-dev": "^1.1.8"
+  }
+}

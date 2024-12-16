@@ -1,0 +1,287 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Description: Alexandria backend serverless application
+
+Parameters:
+  JwtSecret:
+    Type: String
+    NoEcho: true
+    Description: JWT secret for token verification
+
+Globals:
+  Function:
+    Timeout: 30
+    Runtime: nodejs18.x
+    MemorySize: 256
+    Environment:
+      Variables:
+        NODE_ENV: production
+        JWT_SECRET: !Ref JwtSecret
+    CodeUri: src
+
+Resources:
+  # API Gateway
+  ApiGateway:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: prod
+      Cors:
+        AllowMethods: '*'
+        AllowHeaders: '*'
+        AllowOrigin: '*'
+      Auth:
+        DefaultAuthorizer: JWTAuthorizer
+        Authorizers:
+          JWTAuthorizer:
+            FunctionArn: !GetAtt AuthorizerFunction.Arn
+            FunctionPayloadType: TOKEN
+            Identity:
+              Headers:
+                - Authorization
+            ResultTtlInSeconds: 300
+
+  # Authorizer Function
+  AuthorizerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: utils/lambda-middleware.authorizer
+
+  # Root redirect (public)
+  RootFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: handlers/root.handler
+      Events:
+        Root:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /
+            Method: GET
+            Auth:
+              Authorizer: NONE
+              AuthorizationType: NONE
+
+  # Auth Functions (public)
+  LoginFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: handlers/auth/login.handler
+      Events:
+        Login:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /api/login
+            Method: POST
+            Auth:
+              Authorizer: NONE
+              AuthorizationType: NONE
+
+  VerifyFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: handlers/auth/verify.handler
+      Events:
+        Verify:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /verify
+            Method: POST
+            Auth:
+              Authorizer: NONE
+              AuthorizationType: NONE
+
+  VerifyEmailFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: handlers/auth/verifyEmail.handler
+      Events:
+        VerifyEmail:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /verify/{token}
+            Method: GET
+            Auth:
+              Authorizer: NONE
+              AuthorizationType: NONE
+
+  # User Functions (protected)
+  GetUserFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: handlers/users/getUser.handler
+      Events:
+        GetUser:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /api/users/{id}
+            Method: GET
+            Auth:
+              Authorizer: JWTAuthorizer
+              AuthorizationType: CUSTOM
+
+  CreateUserFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: handlers/users/createUser.handler
+      Events:
+        CreateUser:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /api/users
+            Method: POST
+            Auth:
+              Authorizer: JWTAuthorizer
+              AuthorizationType: CUSTOM
+
+  # Languages (protected)
+  GetLanguagesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: handlers/languages/getLanguages.handler
+      Events:
+        GetLanguages:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /languages
+            Method: GET
+            Auth:
+              Authorizer: JWTAuthorizer
+              AuthorizationType: CUSTOM
+
+  # URL Extraction (protected)
+  ExtractUrlFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: handlers/url/extractUrl.handler
+      Events:
+        ExtractUrl:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /url/extract
+            Method: POST
+            Auth:
+              Authorizer: JWTAuthorizer
+              AuthorizationType: CUSTOM
+
+  # Web Dictionaries (protected)
+  GetWebDictionariesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: handlers/webdictionaries/getWebDictionaries.handler
+      Events:
+        GetWebDictionaries:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /webdictionaries/{languageId}
+            Method: GET
+            Auth:
+              Authorizer: JWTAuthorizer
+              AuthorizationType: CUSTOM
+
+  # Texts Functions (protected)
+  GetTextsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: handlers/texts/getTexts.handler
+      Events:
+        GetTexts:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /api/texts
+            Method: GET
+            Auth:
+              Authorizer: JWTAuthorizer
+              AuthorizationType: CUSTOM
+
+  CreateTextFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: handlers/texts/createText.handler
+      Events:
+        CreateText:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /api/texts
+            Method: POST
+            Auth:
+              Authorizer: JWTAuthorizer
+              AuthorizationType: CUSTOM
+
+  # Translations Functions (protected)
+  GetTranslationsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: handlers/translations/getTranslations.handler
+      Events:
+        GetTranslations:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /api/translations
+            Method: GET
+            Auth:
+              Authorizer: JWTAuthorizer
+              AuthorizationType: CUSTOM
+
+  CreateTranslationFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: handlers/translations/createTranslation.handler
+      Events:
+        CreateTranslation:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /api/translations
+            Method: POST
+            Auth:
+              Authorizer: JWTAuthorizer
+              AuthorizationType: CUSTOM
+
+  # Words Functions (protected)
+  GetWordsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: handlers/words/getWords.handler
+      Events:
+        GetWords:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /api/words
+            Method: GET
+            Auth:
+              Authorizer: JWTAuthorizer
+              AuthorizationType: CUSTOM
+
+  CreateWordFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: handlers/words/createWord.handler
+      Events:
+        CreateWord:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /api/words
+            Method: POST
+            Auth:
+              Authorizer: JWTAuthorizer
+              AuthorizationType: CUSTOM
+
+Outputs:
+  ApiEndpoint:
+    Description: "API Gateway endpoint URL"
+    Value: !Sub "https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/prod/"
